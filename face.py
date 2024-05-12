@@ -113,9 +113,9 @@ def start_and_join_threads(frame_reader, detectors, video_output_and_display):
 if __name__ == "__main__":
     profile1 = profile.Profile()
     profile1.enable()
-    video_path = "WIN_20240510_17_15_44_Pro.mkv"
-    output_path = "output_faces.mp4"
-    num_threads = 4  # 控制FaceDetector线程数以及假设VideoOutputAndDisplay作为一个单独线程
+    video_path = "Input_video_path"
+    output_path = "output_path"
+    num_threads = 4  # 控制FaceDetector线程数以及假设VideoOutputAndDisplay作为一个单独线程，建议等于CPU核心数;若该项为0，则为摄像头输入
     
     stop_event = threading.Event()
     frame_reader, detectors, video_output_and_display = create_threads(num_threads-1, video_path, output_path, stop_event)
