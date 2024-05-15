@@ -8,28 +8,18 @@ from multiprocessing import cpu_count
 class FrameReader(threading.Thread):
     def __init__(self, video_source=0, frame_queue=None, stop_event=None):
         super().__init__()
-        self.video_source = video_source
+        cap = cv2.VideoCapture(video_path)
+        #cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)))
+        #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+        self.video_capture = cap
         self.frame_queue = frame_queue
         self.stop_event = stop_event
-        self.video_capture = None  # 初始化时不直接打开视频源
 
-    def open_video_source(self):
-        self.video_capture = cv2.VideoCapture(self.video_source) #在此处开始获取默认分辨率与帧率
-        self.width = int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.height = int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = self.video_capture.get(cv2.CAP_PROP_FPS)
-        print(f"Camera resolution: {self.width}x{self.height}, FPS: {fps}")
 
     def run(self):
-        if not self.open_video_source():
-            print("Failed to open video source.")
-            self.stop_event.set()
-            return
-        
         while not self.stop_event.is_set():
             ret, frame = self.video_capture.read()
             if not ret:
-                print("Frame read failed.")
                 self.stop_event.set()
                 break
             self.frame_queue.put(frame)
@@ -73,7 +63,6 @@ class VideoOutputAndDisplay(threading.Thread):
             if self.writer is None:
                 self.width = frame.shape[1]
                 self.height = frame.shape[0]
-                #self.writer = cv2.VideoWriter(self.output_path, fourcc, 25.0, (4320, 2430))
                 self.writer = cv2.VideoWriter(self.output_path, fourcc, 25.0, (self.width, self.height))
             
             for face in faces:
@@ -82,11 +71,11 @@ class VideoOutputAndDisplay(threading.Thread):
             
             # 更新并显示处理帧数
             self.frame_count += 1
-            cv2.putText(frame, f"Frames Processed: {self.frame_count}", (10, self.height - 30), 
+            cv2.putText(frame, f"Frame: {self.frame_count}", (10, self.height - 30), 
                        self.font, 1, (0, 255, 0), 2)
             
             # 更新并显示检测到的人脸数
-            cv2.putText(frame, f"Faces Detected: {len(faces)}", (10, 30), 
+            cv2.putText(frame, f"Detected: {len(faces)}", (10, 30), 
                        self.font, 1, (0, 0, 255), 2)
             
             # 写入视频帧
@@ -131,7 +120,7 @@ if __name__ == "__main__":
     #profile1.enable()
     video_path = 1   #若该项为数字，则为摄像头输入
     output_path = "output_path.mkv"
-    num_threads = cpu_count()-1  # 控制FaceDetector线程数以及假设VideoOutputAndDisplay作为一个单独线程，建议等于CPU核心数-1
+    num_threads = cpu_count() - 1  # 控制FaceDetector线程数以及假设VideoOutputAndDisplay作为一个单独线程，建议等于CPU核心数-1
     
     stop_event = threading.Event()
     frame_reader, detectors, video_output_and_display = create_threads(num_threads-1, video_path, output_path, stop_event)
@@ -140,4 +129,4 @@ if __name__ == "__main__":
     
     #profile1.disable()
     #profile1.print_stats()
-    print("视频处理完成，已保存为", output_path)
+    print("Completed!Video saved as ", output_path)
